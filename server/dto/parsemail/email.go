@@ -360,7 +360,12 @@ func (e *Email) BuildBytes(ctx *context.Context, dkim bool) []byte {
 	if err != nil {
 		log.Fatal(err)
 	}
-	io.WriteString(w, string(e.HTML))
+	if len(e.HTML) > 0 {
+		io.WriteString(w, string(e.HTML))
+	} else {
+		io.WriteString(w, string(e.Text))
+	}
+
 	w.Close()
 
 	tw.Close()
