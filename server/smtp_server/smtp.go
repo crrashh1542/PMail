@@ -43,6 +43,8 @@ type Session struct {
 }
 
 func (s *Session) AuthPlain(username, pwd string) error {
+	log.WithContext(s.Ctx).Debugf("Auth %s %s", username, pwd)
+
 	s.User = username
 
 	var user models.User
@@ -64,6 +66,8 @@ func (s *Session) AuthPlain(username, pwd string) error {
 		s.Ctx.UserAccount = user.Account
 		s.Ctx.UserID = user.ID
 		s.Ctx.UserName = user.Name
+
+		log.WithContext(s.Ctx).Debugf("Auth Success %+v", user)
 		return nil
 	}
 
@@ -72,11 +76,14 @@ func (s *Session) AuthPlain(username, pwd string) error {
 }
 
 func (s *Session) Mail(from string, opts *smtp.MailOptions) error {
+	log.WithContext(s.Ctx).Debugf("Mail Success %+v %+v", from, opts)
 	s.From = from
 	return nil
 }
 
 func (s *Session) Rcpt(to string) error {
+	log.WithContext(s.Ctx).Debugf("Rcpt Success %+v", to)
+
 	s.To = append(s.To, to)
 	return nil
 }
