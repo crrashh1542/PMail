@@ -123,7 +123,7 @@ func saveEmail(ctx *context.Context, email *parsemail.Email, emailType int, SPFS
 		return nil
 	}
 
-	sql := "INSERT INTO email (type, send_date, subject, reply_to, from_name, from_address, `to`, bcc, cc, text, html, sender, attachments,spf_check, dkim_check, create_time,is_read,status,group_id) VALUES (?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	sql := "INSERT INTO email (type, send_date, subject, reply_to, from_name, from_address, `to`, bcc, cc, text, html, sender, attachments,spf_check, dkim_check, create_time,is_read,status,group_id) VALUES (?,?,?,?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
 	_, err := db.Instance.Exec(sql,
 		emailType,
 		email.Date,
