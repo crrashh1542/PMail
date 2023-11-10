@@ -10,6 +10,8 @@ github.com/Jinnrry/gopop v0.0.0-20231109113124-29947e68ddf7 h1:GFm3jyFtb+AsVodnQ
 github.com/Jinnrry/gopop v0.0.0-20231109113124-29947e68ddf7/go.mod h1:xcI6e+jbXWN+T8EWOJtHbAku6pzNqyCHaFvzdeL1r2o=
 github.com/Jinnrry/gopop v0.0.0-20231110034408-2df37b20353b h1:BnmGVd+PPIfbbuLr0FaRhMGyG24YYdOvr4MjiFaA5VM=
 github.com/Jinnrry/gopop v0.0.0-20231110034408-2df37b20353b/go.mod h1:xcI6e+jbXWN+T8EWOJtHbAku6pzNqyCHaFvzdeL1r2o=
+github.com/Jinnrry/gopop v0.0.0-20231110105706-0b12244e60a8 h1:rmwzoLzCZs3XaCNF61A4vx0FPvq2/loQU13QrOOupsw=
+github.com/Jinnrry/gopop v0.0.0-20231110105706-0b12244e60a8/go.mod h1:xcI6e+jbXWN+T8EWOJtHbAku6pzNqyCHaFvzdeL1r2o=
 github.com/Jinnrry/scs/sqlite3store v0.0.0-20230803080525-914f01e0d379 h1:i6LB/3lgkRDupe3owyNXtH8dtQrdaReCLeAZKrWcqAE=
 github.com/Jinnrry/scs/sqlite3store v0.0.0-20230803080525-914f01e0d379/go.mod h1:Iyk7S76cxGaiEX/mSYmTZzYehp4KfyylcLaV3OnToss=
 github.com/alexedwards/scs/mysqlstore v0.0.0-20230327161757-10d4299e3b24 h1:1jXpX7IE/zuf9FZQJpqZNepXqW8mq6NLzplHDCA43HY=

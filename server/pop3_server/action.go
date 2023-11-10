@@ -19,7 +19,23 @@ import (
 type action struct {
 }
 
-func (a action) User(ctx *gopop.Data, username string) error {
+func (a action) Capa(ctx *gopop.Session) ([]string, error) {
+	return []string{
+		"USER",
+		"PASS",
+		"APOP",
+		"STAT",
+		"UIDL",
+		"LIST",
+		"RETR",
+		"DELE",
+		"REST",
+		"NOOP",
+		"QUIT",
+	}, nil
+}
+
+func (a action) User(ctx *gopop.Session, username string) error {
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -37,7 +53,7 @@ func (a action) User(ctx *gopop.Data, username string) error {
 	return nil
 }
 
-func (a action) Pass(ctx *gopop.Data, pwd string) error {
+func (a action) Pass(ctx *gopop.Session, pwd string) error {
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -68,7 +84,7 @@ func (a action) Pass(ctx *gopop.Data, pwd string) error {
 	return errors.New("password error")
 }
 
-func (a action) Apop(ctx *gopop.Data, username, digest string) error {
+func (a action) Apop(ctx *gopop.Session, username, digest string) error {
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -109,7 +125,7 @@ type statInfo struct {
 	Size int64 `json:"size"`
 }
 
-func (a action) Stat(ctx *gopop.Data) (msgNum, msgSize int64, err error) {
+func (a action) Stat(ctx *gopop.Session) (msgNum, msgSize int64, err error) {
 
 	var si statInfo
 	err = db.Instance.Get(&si, db.WithContext(ctx.Ctx.(*context.Context), "select count(1) as `num`, sum(length(text)+length(html)) as `size` from email"))
@@ -124,7 +140,7 @@ func (a action) Stat(ctx *gopop.Data) (msgNum, msgSize int64, err error) {
 	return si.Num, si.Size, nil
 }
 
-func (a action) Uidl(ctx *gopop.Data, id int64) (string, error) {
+func (a action) Uidl(ctx *gopop.Session, id int64) (string, error) {
 	log.WithContext(ctx.Ctx).Debugf("POP3 Uidl RETURT : %d", id)
 
 	return cast.ToString(id), nil
@@ -135,7 +151,7 @@ type listItem struct {
 	Size int64 `json:"size"`
 }
 
-func (a action) List(ctx *gopop.Data, msg string) ([]gopop.MailInfo, error) {
+func (a action) List(ctx *gopop.Session, msg string) ([]gopop.MailInfo, error) {
 	var res []listItem
 	var id int64
 	if msg != "" {
@@ -166,7 +182,7 @@ func (a action) List(ctx *gopop.Data, msg string) ([]gopop.MailInfo, error) {
 	return ret, nil
 }
 
-func (a action) Retr(ctx *gopop.Data, id int64) (string, int64, error) {
+func (a action) Retr(ctx *gopop.Session, id int64) (string, int64, error) {
 
 	email, err := detail.GetEmailDetail(ctx.Ctx.(*context.Context), cast.ToInt(id), false)
 	if err != nil {
@@ -179,18 +195,18 @@ func (a action) Retr(ctx *gopop.Data, id int64) (string, int64, error) {
 
 }
 
-func (a action) Delete(ctx *gopop.Data, id int64) error {
+func (a action) Delete(ctx *gopop.Session, id int64) error {
 	ctx.DeleteIds = append(ctx.DeleteIds, id)
 	ctx.DeleteIds = array.Unique(ctx.DeleteIds)
 	return nil
 }
 
-func (a action) Rest(ctx *gopop.Data) error {
+func (a action) Rest(ctx *gopop.Session) error {
 	ctx.DeleteIds = []int64{}
 	return nil
 }
 
-func (a action) Top(ctx *gopop.Data, id int64, n int) (string, error) {
+func (a action) Top(ctx *gopop.Session, id int64, n int) (string, error) {
 	//email, err := detail.GetEmailDetail(ctx.Ctx.(*context.Context), cast.ToInt(id), false)
 	//if err != nil {
 	//	log.WithContext(ctx.Ctx.(*context.Context)).Errorf("%+v", err)
@@ -203,11 +219,11 @@ func (a action) Top(ctx *gopop.Data, id int64, n int) (string, error) {
 	return "", errors.New("not supported")
 }
 
-func (a action) Noop(ctx *gopop.Data) error {
+func (a action) Noop(ctx *gopop.Session) error {
 	return nil
 }
 
-func (a action) Quit(ctx *gopop.Data) error {
+func (a action) Quit(ctx *gopop.Session) error {
 	if len(ctx.DeleteIds) > 0 {
 
 		_, err := db.Instance.Exec(db.WithContext(ctx.Ctx.(*context.Context), "DELETE FROM email WHERE id in ?"), ctx.DeleteIds)
