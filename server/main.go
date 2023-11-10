@@ -50,7 +50,7 @@ type logHandler struct {
 func newSLogger(level slog.Level) *slog.Logger {
 	handler := &logHandler{
 		// handler 使用 slog 默认的 Handler
-		slog.Default().Handler(),
+		slog.NewTextHandler(os.Stdout, nil),
 		level,
 	}
 
