@@ -22,7 +22,7 @@ type User struct {
 
 func (u User) GetDomain() string {
 	infos := strings.Split(u.EmailAddress, "@")
-	if len(infos) > 2 {
+	if len(infos) >= 2 {
 		return infos[1]
 	}
 
