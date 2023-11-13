@@ -36,6 +36,7 @@ func (a action) Capa(ctx *gopop.Session) ([]string, error) {
 }
 
 func (a action) User(ctx *gopop.Session, username string) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: USER, Args:%s", username)
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -54,6 +55,7 @@ func (a action) User(ctx *gopop.Session, username string) error {
 }
 
 func (a action) Pass(ctx *gopop.Session, pwd string) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: PASS, Args:%s", pwd)
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -85,6 +87,7 @@ func (a action) Pass(ctx *gopop.Session, pwd string) error {
 }
 
 func (a action) Apop(ctx *gopop.Session, username, digest string) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: APOP, Args:%s,%s", username, digest)
 	if ctx.Ctx == nil {
 		tc := &context.Context{}
 		tc.SetValue(context.LogID, id.GenLogID())
@@ -126,6 +129,7 @@ type statInfo struct {
 }
 
 func (a action) Stat(ctx *gopop.Session) (msgNum, msgSize int64, err error) {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: STAT")
 
 	var si statInfo
 	err = db.Instance.Get(&si, db.WithContext(ctx.Ctx.(*context.Context), "select count(1) as `num`, sum(length(text)+length(html)) as `size` from email"))
@@ -141,7 +145,7 @@ func (a action) Stat(ctx *gopop.Session) (msgNum, msgSize int64, err error) {
 }
 
 func (a action) Uidl(ctx *gopop.Session, id int64) (string, error) {
-	log.WithContext(ctx.Ctx).Debugf("POP3 Uidl RETURT : %d", id)
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: UIDL ,Args:%d", id)
 
 	return cast.ToString(id), nil
 }
@@ -152,23 +156,28 @@ type listItem struct {
 }
 
 func (a action) List(ctx *gopop.Session, msg string) ([]gopop.MailInfo, error) {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: LIST ,Args:%s", msg)
 	var res []listItem
-	var id int64
+	var listId int64
 	if msg != "" {
-		id = cast.ToInt64(msg)
-		if id == 0 {
+		listId = cast.ToInt64(msg)
+		if listId == 0 {
 			return nil, errors.New("params error")
 		}
 	}
 	var err error
-	if id != 0 {
-		err = db.Instance.Select(&res, db.WithContext(ctx.Ctx.(*context.Context), "select id, length(text)+length(html) as `size` from email where id =?"), id)
+	var ssql string
+
+	if listId != 0 {
+		ssql = db.WithContext(ctx.Ctx.(*context.Context), "select id, length(text)+length(html) as `size` from email where id =?")
+		err = db.Instance.Select(&res, ssql, listId)
 	} else {
-		err = db.Instance.Select(&res, db.WithContext(ctx.Ctx.(*context.Context), "select id, length(text)+length(html) as `size` from email"))
+		ssql = db.WithContext(ctx.Ctx.(*context.Context), "select id, length(text)+length(html) as `size` from email")
+		err = db.Instance.Select(&res, ssql)
 	}
 
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.WithContext(ctx.Ctx.(*context.Context)).Errorf("%+v", err)
+		log.WithContext(ctx.Ctx.(*context.Context)).Errorf("SQL:%s  Error: %+v", ssql, err)
 		err = nil
 		return []gopop.MailInfo{}, nil
 	}
@@ -183,7 +192,7 @@ func (a action) List(ctx *gopop.Session, msg string) ([]gopop.MailInfo, error) {
 }
 
 func (a action) Retr(ctx *gopop.Session, id int64) (string, int64, error) {
-
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: RETR ,Args:%d", id)
 	email, err := detail.GetEmailDetail(ctx.Ctx.(*context.Context), cast.ToInt(id), false)
 	if err != nil {
 		log.WithContext(ctx.Ctx.(*context.Context)).Errorf("%+v", err)
@@ -196,17 +205,21 @@ func (a action) Retr(ctx *gopop.Session, id int64) (string, int64, error) {
 }
 
 func (a action) Delete(ctx *gopop.Session, id int64) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: DELE ,Args:%d", id)
+
 	ctx.DeleteIds = append(ctx.DeleteIds, id)
 	ctx.DeleteIds = array.Unique(ctx.DeleteIds)
 	return nil
 }
 
 func (a action) Rest(ctx *gopop.Session) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: REST ")
 	ctx.DeleteIds = []int64{}
 	return nil
 }
 
 func (a action) Top(ctx *gopop.Session, id int64, n int) (string, error) {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: TOP ")
 	//email, err := detail.GetEmailDetail(ctx.Ctx.(*context.Context), cast.ToInt(id), false)
 	//if err != nil {
 	//	log.WithContext(ctx.Ctx.(*context.Context)).Errorf("%+v", err)
@@ -220,10 +233,12 @@ func (a action) Top(ctx *gopop.Session, id int64, n int) (string, error) {
 }
 
 func (a action) Noop(ctx *gopop.Session) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: NOOP ")
 	return nil
 }
 
 func (a action) Quit(ctx *gopop.Session) error {
+	log.WithContext(ctx.Ctx).Debugf("POP3 CMD: QUIT ")
 	if len(ctx.DeleteIds) > 0 {
 
 		_, err := db.Instance.Exec(db.WithContext(ctx.Ctx.(*context.Context), "DELETE FROM email WHERE id in ?"), ctx.DeleteIds)
