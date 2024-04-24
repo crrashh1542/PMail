@@ -9,6 +9,7 @@ import (
 	"pmail/dto/parsemail"
 	"pmail/hooks"
 	"pmail/http_server"
+	"pmail/models"
 	"pmail/pop3_server"
 	"pmail/services/setup/ssl"
 	"pmail/session"
@@ -37,6 +38,7 @@ func Init(serverVersion string) {
 		if err != nil {
 			panic(err)
 		}
+		models.SyncTables()
 		session.Init()
 		hooks.Init(serverVersion)
 		// smtp server start

@@ -18,9 +18,9 @@ func GetAllRules(ctx *context.Context) []*dto.Rule {
 	var res []*models.Rule
 	var err error
 	if ctx == nil || ctx.UserID == 0 {
-		err = db.Instance.Select(&res, "select * from rule order by sort desc")
+		err = db.Instance.Decr("sort").Find(&res)
 	} else {
-		err = db.Instance.Select(&res, db.WithContext(ctx, "select * from rule where user_id=? order by sort desc"), ctx.UserID)
+		err = db.Instance.Where("user_id=?", ctx.UserID).Decr("sort").Find(&res)
 	}
 
 	if err != nil {
@@ -65,8 +65,14 @@ func DoRule(ctx *context.Context, rule *dto.Rule, email *parsemail.Email) {
 	switch rule.Action {
 	case dto.READ:
 		email.IsRead = 1
+		if email.MessageId > 0 {
+			db.Instance.Exec(db.WithContext(ctx, "update email set is_read=1 where id =?"), email.MessageId)
+		}
 	case dto.DELETE:
 		email.Status = 3
+		if email.MessageId > 0 {
+			db.Instance.Exec(db.WithContext(ctx, "update email set status=3 where id =?"), email.MessageId)
+		}
 	case dto.FORWARD:
 		if strings.Contains(rule.Params, config.Instance.Domain) {
 			log.WithContext(ctx).Errorf("Forward Error! loop forwarding!")
@@ -78,5 +84,9 @@ func DoRule(ctx *context.Context, rule *dto.Rule, email *parsemail.Email) {
 		}
 	case dto.MOVE:
 		email.GroupId = cast.ToInt(rule.Params)
+		if email.MessageId > 0 {
+			db.Instance.Exec(db.WithContext(ctx, "update email set group_id=? where id =?"), email.GroupId, email.MessageId)
+		}
 	}
+
 }

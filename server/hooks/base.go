@@ -26,6 +26,24 @@ type HookSender struct {
 	socket string
 }
 
+func (h *HookSender) ReceiveSaveAfter(ctx *context.Context, email *parsemail.Email) {
+	log.WithContext(ctx).Debugf("[%s]Plugin ReceiveSaveAfter Start", h.name)
+
+	dto := framework.HookDTO{
+		Ctx:   ctx,
+		Email: email,
+	}
+	body, _ := json.Marshal(dto)
+
+	_, err := h.httpc.Post("http://plugin/ReceiveSaveAfter", "application/json", strings.NewReader(string(body)))
+	if err != nil {
+		log.WithContext(ctx).Errorf("[%s] Error! %v", h.name, err)
+		return
+	}
+
+	log.WithContext(ctx).Debugf("[%s]Plugin ReceiveSaveAfter End", h.name)
+}
+
 func (h *HookSender) SendBefore(ctx *context.Context, email *parsemail.Email) {
 	log.WithContext(ctx).Debugf("[%s]Plugin SendBefore Start", h.name)
 
@@ -59,18 +77,12 @@ func (h *HookSender) SendAfter(ctx *context.Context, email *parsemail.Email, err
 	}
 	body, _ := json.Marshal(dto)
 
-	ret, errL := h.httpc.Post("http://plugin/SendAfter", "application/json", strings.NewReader(string(body)))
+	_, errL := h.httpc.Post("http://plugin/SendAfter", "application/json", strings.NewReader(string(body)))
 	if errL != nil {
 		log.WithContext(ctx).Errorf("[%s] Error! %v", h.name, errL)
 		return
 	}
 
-	body, _ = io.ReadAll(ret.Body)
-	json.Unmarshal(body, &dto)
-
-	ctx = dto.Ctx
-	email = dto.Email
-	err = dto.ErrMap
 	log.WithContext(ctx).Debugf("[%s]Plugin SendAfter End", h.name)
 
 }

@@ -3,6 +3,7 @@ package smtp_server
 import (
 	"crypto/tls"
 	"database/sql"
+	"github.com/emersion/go-sasl"
 	"github.com/emersion/go-smtp"
 	log "github.com/sirupsen/logrus"
 	"net"
@@ -42,6 +43,30 @@ type Session struct {
 	Ctx           *context.Context
 }
 
+// AuthMechanisms returns a slice of available auth mechanisms
+// supported in this example.
+func (s *Session) AuthMechanisms() []string {
+	return []string{sasl.Plain, sasl.Login}
+}
+
+// Auth is the handler for supported authenticators.
+func (s *Session) Auth(mech string) (sasl.Server, error) {
+	log.WithContext(s.Ctx).Debugf("Auth :%s", mech)
+	if mech == sasl.Plain {
+		return sasl.NewPlainServer(func(identity, username, password string) error {
+			return s.AuthPlain(username, password)
+		}), nil
+	}
+
+	if mech == sasl.Login {
+		return sasl.NewLoginServer(func(username, password string) error {
+			return s.AuthPlain(username, password)
+		}), nil
+	}
+
+	return nil, errors.New("Auth Not Supported")
+}
+
 func (s *Session) AuthPlain(username, pwd string) error {
 	log.WithContext(s.Ctx).Debugf("Auth %s %s", username, pwd)
 
@@ -56,8 +81,7 @@ func (s *Session) AuthPlain(username, pwd string) error {
 		username = infos[0]
 	}
 
-	err := db.Instance.Get(&user, db.WithContext(s.Ctx, "select * from user where account =? and password =?"),
-		username, encodePwd)
+	_, err := db.Instance.Where("account =? and password =?", username, encodePwd).Get(&user)
 	if err != nil && err != sql.ErrNoRows {
 		log.Errorf("%+v", err)
 	}
@@ -105,7 +129,6 @@ func StartWithTLS() {
 	instanceTls.Addr = ":465"
 	instanceTls.Domain = config.Instance.Domain
 	instanceTls.ReadTimeout = 10 * time.Second
-	instanceTls.AuthDisabled = false
 	instanceTls.WriteTimeout = 10 * time.Second
 	instanceTls.MaxMessageBytes = 1024 * 1024
 	instanceTls.MaxRecipients = 50
@@ -134,7 +157,6 @@ func Start() {
 	instance.Addr = ":25"
 	instance.Domain = config.Instance.Domain
 	instance.ReadTimeout = 10 * time.Second
-	instance.AuthDisabled = false
 	instance.WriteTimeout = 10 * time.Second
 	instance.MaxMessageBytes = 1024 * 1024
 	instance.MaxRecipients = 50

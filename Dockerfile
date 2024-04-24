@@ -35,4 +35,6 @@ COPY --from=serverbuild /work/server/hooks/telegram_push/output/* ./plugins/
 COPY --from=serverbuild /work/server/hooks/web_push/output/* ./plugins/
 COPY --from=serverbuild /work/server/hooks/wechat_push/output/* ./plugins/
 
+EXPOSE 25 80 110 443 465 995
+
 CMD /work/pmail
